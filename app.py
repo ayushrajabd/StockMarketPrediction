@@ -3,30 +3,43 @@ import yfinance as yf
 import joblib
 import plotly.graph_objects as go
 import numpy as np
+import streamlit as st
+
+from sentiment import get_sentiment
+st.write(get_sentiment("Reliance"))
+
+stock_name = st.text_input("Enter Stock Name", "Reliance", key="main_input")
 
 from utils import add_indicators
 
-# ------------------ PAGE CONFIG ------------------
+
+
 st.set_page_config(
     page_title="AI Stock Dashboard",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ------------------ SIDEBAR ------------------
+
 st.sidebar.title("⚙️ Settings")
 
-ticker = st.sidebar.text_input("Enter Stock Ticker", "AAPL")
+ticker = st.sidebar.text_input("Enter Stock Ticker", "AAPL", key="sidebar_input")
 
 period = st.sidebar.selectbox(
     "Select Period",
     ["6mo", "1y", "2y", "5y"]
 )
 
-# ------------------ TITLE ------------------
+ticker = st.sidebar.text_input("Enter Stock Ticker", "AAPL")
+# ------------------ SENTIMENT ------------------
+sentiment_score = get_sentiment(ticker)
+
+st.sidebar.metric("🧠 Market Sentiment", round(sentiment_score, 2))
+
+
 st.title("📊 AI Stock Prediction Dashboard")
 
-# ------------------ LOAD DATA ------------------
+
 data = yf.download(ticker, period=period)
 
 if data.empty:
@@ -35,12 +48,14 @@ if data.empty:
 
 data = add_indicators(data)
 
-# ------------------ METRICS ------------------
+
 col1, col2, col3 = st.columns(3)
 
 price = round(data['Close'].iloc[-1], 2)
 
 col1.metric("💰 Current Price", price)
+col2.metric("🧠 Sentiment", round(sentiment_score, 2))
+col1, col2, col3, col4 = st.columns(4)
 
 # ------------------ LOAD MODEL ------------------
 model = joblib.load("model.pkl")
@@ -49,8 +64,10 @@ scaler = joblib.load("scaler.pkl")
 features = [
 'SMA','Momentum','RSI','EMA',
 'MACD','BB_upper','BB_lower',
-'ATR','OBV'
+'ATR','OBV'   # ✅ NEW
 ]
+
+data = add_indicators(data)
 
 X = data[features].tail(1)
 X_scaled = scaler.transform(X)
@@ -109,4 +126,4 @@ with tab3:
 
 # ------------------ FOOTER ------------------
 st.markdown("---")
-st.markdown("Built by Ayush")
+st.markdown("Built by Ayush and Vikas")

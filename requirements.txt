@@ -8,3 +8,6 @@ scikit-learn
 ta
 plotly
 joblib
+
+tweepy
+textblob
