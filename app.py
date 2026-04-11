@@ -10,6 +10,7 @@ st.write(get_sentiment("Reliance"))
 
 stock_name = st.text_input("Enter Stock Name", "Reliance", key="main_input")
 
+
 from utils import add_indicators
 
 
@@ -47,6 +48,7 @@ if data.empty:
     st.stop()
 
 data = add_indicators(data)
+data['Sentiment'] = get_sentiment(ticker)
 
 
 col1, col2, col3 = st.columns(3)
@@ -64,7 +66,7 @@ scaler = joblib.load("scaler.pkl")
 features = [
 'SMA','Momentum','RSI','EMA',
 'MACD','BB_upper','BB_lower',
-'ATR','OBV'   # ✅ NEW
+'ATR','OBV','Sentiment'   # ✅ NEW
 ]
 
 data = add_indicators(data)
