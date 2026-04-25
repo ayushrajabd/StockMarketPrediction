@@ -4,44 +4,34 @@ import joblib
 import plotly.graph_objects as go
 import numpy as np
 
-st.set_page_config(
-    page_title="AI Stock Dashboard",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
 from sentiment import get_sentiment
 from utils import add_indicators
 
-stock_name = st.text_input("Enter Stock Name", "Reliance", key="main_input")
-
-
+# ------------------ PAGE CONFIG ------------------
 st.set_page_config(
     page_title="AI Stock Dashboard",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-
+# ------------------ SIDEBAR ------------------
 st.sidebar.title("⚙️ Settings")
 
-ticker = st.sidebar.text_input("Enter Stock Ticker", "AAPL", key="sidebar_input")
+ticker = st.sidebar.text_input("Enter Stock Ticker", "AAPL")
 
 period = st.sidebar.selectbox(
     "Select Period",
     ["6mo", "1y", "2y", "5y"]
 )
 
-
 # ------------------ SENTIMENT ------------------
 sentiment_score = get_sentiment(ticker)
-
 st.sidebar.metric("🧠 Market Sentiment", round(sentiment_score, 2))
 
-
+# ------------------ TITLE ------------------
 st.title("📊 AI Stock Prediction Dashboard")
 
-
+# ------------------ DATA ------------------
 data = yf.download(ticker, period=period)
 
 if data.empty:
@@ -49,28 +39,25 @@ if data.empty:
     st.stop()
 
 data = add_indicators(data)
-data['Sentiment'] = get_sentiment(ticker)
+data['Sentiment'] = sentiment_score
 
-
+# ------------------ METRICS ------------------
 col1, col2, col3 = st.columns(3)
 
 price = round(data['Close'].iloc[-1], 2)
 
 col1.metric("💰 Current Price", price)
 col2.metric("🧠 Sentiment", round(sentiment_score, 2))
-col1, col2, col3, col4 = st.columns(4)
 
 # ------------------ LOAD MODEL ------------------
 model = joblib.load("model.pkl")
 scaler = joblib.load("scaler.pkl")
 
 features = [
-'SMA','Momentum','RSI','EMA',
-'MACD','BB_upper','BB_lower',
-'ATR','OBV','Sentiment'   # ✅ NEW
+    'SMA','Momentum','RSI','EMA',
+    'MACD','BB_upper','BB_lower',
+    'ATR','OBV','Sentiment'
 ]
-
-data = add_indicators(data)
 
 X = data[features].tail(1)
 X_scaled = scaler.transform(X)
@@ -78,19 +65,20 @@ X_scaled = scaler.transform(X)
 prediction = model.predict(X_scaled)[0]
 prob = model.predict_proba(X_scaled)[0][1]
 
-# ------------------ SIGNAL ------------------
+# ------------------ SIGNAL + CONFIDENCE ------------------
+col2, col3 = st.columns(2)
+
 if prediction == 1:
     col2.metric("📈 Signal", "BUY")
 else:
     col2.metric("📉 Signal", "SELL")
 
-# ------------------ CONFIDENCE ------------------
 col3.metric("🎯 Confidence", f"{prob*100:.2f}%")
 
 # ------------------ TABS ------------------
 tab1, tab2, tab3 = st.tabs(["📈 Chart", "📊 Indicators", "📉 Data"])
 
-# ------------------ CANDLESTICK ------------------
+# ------------------ CHART ------------------
 with tab1:
     fig = go.Figure()
 
@@ -99,8 +87,7 @@ with tab1:
         open=data['Open'],
         high=data['High'],
         low=data['Low'],
-        close=data['Close'],
-        name="Price"
+        close=data['Close']
     ))
 
     fig.update_layout(
@@ -123,7 +110,7 @@ with tab2:
         st.subheader("MACD")
         st.line_chart(data['MACD'])
 
-# ------------------ DATA TABLE ------------------
+# ------------------ DATA ------------------
 with tab3:
     st.dataframe(data.tail(50))
 
