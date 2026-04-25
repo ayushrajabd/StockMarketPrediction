@@ -3,16 +3,17 @@ import yfinance as yf
 import joblib
 import plotly.graph_objects as go
 import numpy as np
-import streamlit as st
+
+st.set_page_config(
+    page_title="AI Stock Dashboard",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 from sentiment import get_sentiment
-st.write(get_sentiment("Reliance"))
-
-stock_name = st.text_input("Enter Stock Name", "Reliance", key="main_input")
-
-
 from utils import add_indicators
 
+stock_name = st.text_input("Enter Stock Name", "Reliance", key="main_input")
 
 
 st.set_page_config(
