@@ -32,7 +32,7 @@ period = st.sidebar.selectbox(
     ["6mo", "1y", "2y", "5y"]
 )
 
-ticker = st.sidebar.text_input("Enter Stock Ticker", "AAPL")
+
 # ------------------ SENTIMENT ------------------
 sentiment_score = get_sentiment(ticker)
 
