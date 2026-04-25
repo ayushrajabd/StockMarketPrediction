@@ -4,10 +4,9 @@ pandas
 numpy
 matplotlib
 scikit-learn
-
 ta
 plotly
 joblib
-
 tweepy
 textblob
+openpyxl
