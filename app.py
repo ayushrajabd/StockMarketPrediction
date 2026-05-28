@@ -55,6 +55,21 @@ if missing_packages:
     st.code("pip install -r requirements.txt", language="powershell")
     st.stop()
 
+
+def load_saved_stock_data():
+    stock_data_path = APP_DIR / "stock_data.xlsx"
+    if not stock_data_path.exists():
+        return None, "stock_data.xlsx is missing."
+
+    try:
+        saved_data = pd.read_excel(stock_data_path)
+        if "Date" in saved_data.columns:
+            saved_data["Date"] = pd.to_datetime(saved_data["Date"])
+            saved_data = saved_data.set_index("Date")
+        return saved_data, None
+    except Exception as exc:
+        return None, str(exc)
+
 # ------------------ SIDEBAR ------------------
 st.sidebar.title("Settings")
 
@@ -78,33 +93,35 @@ st.title("AI Stock Prediction Dashboard")
 
 # ------------------ DATA ------------------
 if yf is None:
-    stock_data_path = APP_DIR / "stock_data.xlsx"
-    if not stock_data_path.exists():
-        st.error("yfinance is not installed and stock_data.xlsx is missing.")
-        st.code("pip install yfinance", language="powershell")
+    data, saved_data_error = load_saved_stock_data()
+    if data is None:
+        st.error("yfinance is not installed and saved stock data could not be loaded.")
+        st.caption(saved_data_error)
         st.stop()
 
-    st.info("yfinance is not installed, so the app is using saved stock_data.xlsx data.")
-    try:
-        data = pd.read_excel(stock_data_path)
-        if "Date" in data.columns:
-            data["Date"] = pd.to_datetime(data["Date"])
-            data = data.set_index("Date")
-    except Exception as exc:
-        st.error("Could not read stock_data.xlsx.")
-        st.caption(str(exc))
-        st.stop()
+    st.info("Using saved stock_data.xlsx data because live yfinance data is unavailable.")
 else:
     try:
         data = yf.download(ticker, period=period)
     except Exception as exc:
-        st.error("Could not download stock data. Check your internet connection and ticker symbol.")
-        st.caption(str(exc))
-        st.stop()
+        data, saved_data_error = load_saved_stock_data()
+        if data is None:
+            st.error("Could not download live stock data or load saved stock data.")
+            st.caption(f"Live data error: {exc}")
+            st.caption(f"Saved data error: {saved_data_error}")
+            st.stop()
+
+        st.warning("Could not download live stock data, so the app is using saved stock_data.xlsx data.")
 
 if data.empty:
-    st.error("No data found. Please check the ticker symbol and try again.")
-    st.stop()
+    data, saved_data_error = load_saved_stock_data()
+    if data is None or data.empty:
+        st.error("No stock data found from yfinance or stock_data.xlsx.")
+        if saved_data_error:
+            st.caption(saved_data_error)
+        st.stop()
+
+    st.warning("No live data found for this ticker, so the app is using saved stock_data.xlsx data.")
 
 try:
     data = add_indicators(data)
