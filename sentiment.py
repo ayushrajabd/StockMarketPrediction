@@ -1,4 +1,3 @@
-# sentiment.py
 import random
 
 
